@@ -1,0 +1,109 @@
+﻿@page "/eduction-schedule"
+
+@rendermode InteractiveServer
+
+@using Syncfusion.Blazor.Gantt
+
+<div>
+    <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px">
+        <h1>Department</h1>
+        <h3>Computer Science & Engineering</h3>
+    </div>
+    <div>
+        <SfGantt @ref="gantt" TValue="Course" DataSource="@examCollection" Width="100%" Height="450px" EnablePredecessorValidation="false" GridLines="GridLine.Vertical" ScrollToTaskbarOnClick="true">
+            <GanttTaskFields Id="CourseId" Name="SubjectName" ParentID="ParentId" Progress="PortionCompletion" StartDate="StartDate" Duration="Duration" Indicators="Indicators" Dependency="Predecessor"></GanttTaskFields>
+            <GanttColumns>
+                <GanttColumn Field="Department" HeaderText="Academic Period" Width="180"></GanttColumn>
+                <GanttColumn Field="SubjectCode" HeaderText="Subject Code" Width="100"></GanttColumn>
+                <GanttColumn Field="SubjectName" HeaderText="Subject" Width="400"></GanttColumn>
+                <GanttColumn Field="Batch" HeaderText="Batch"></GanttColumn>
+                <GanttColumn Field="Professor" HeaderText="Professor"></GanttColumn>
+                <GanttColumn Field="PortionCompletion" HeaderText="PortionCompletion"></GanttColumn>
+            </GanttColumns>
+            <GanttSplitterSettings ColumnIndex="3"></GanttSplitterSettings>
+            <GanttTemplates TValue="Course">
+                <TaskbarTemplate>
+                    @{
+                        var task = (context as Course);
+                        if (task == null)
+                        {
+                            return;
+                        }
+                        var taskModel = gantt.GetRowTaskModel(task);
+                        List<GanttSegmentData> segments = taskModel.Segments;
+                        var taskbarBackground = task.Department == "Theoretical Exams" ? "#FFA07A" : task.Department == "Partical Exams" ? "" : "#D1E7DD";
+                        var progressbarBackground = task.Department == "Theoretical Exams" ? "#FF7F50 !important" : task.Department == "Partical Exams" ? "" : "#198754 !important";
+                        @if (segments != null && segments.Count() > 1)
+                        {
+                            foreach (var segment in segments)
+                            {
+                                <div class="e-gantt-child-taskbar-inner-div e-gantt-child-taskbar e-segmented-taskbar" style=@("height:24px;position: absolute;left:" + segment.Left + "px; width:" + segment.Width + "px; background-color:"+ taskbarBackground +" !important;") tabindex=-1 data-segment-index="@(segment.SegmentIndex)">
+                                    <div class="e-taskbar-left-resizer e-icon" style="margin-top: 5px; left:2px">
+                                    </div>
+                                    <div class="e-gantt-child-progressbar-inner-div e-gantt-child-progressbar" style="height:24px;width:@(segment.ProgressWidth + "px");border-radius: 0px;text-align: right;background-color:@progressbarBackground">
+                                    </div>
+                                    <div class="e-taskbar-right-resizer e-icon" style="margin-top: 5px;left:@((segment.Width) - 15)px">
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="e-gantt-child-taskbar e-gantt-child-taskbar-inner-div" style="height:24px;" tabindex=-1>
+                                <div class="e-gantt-child-progressbar-inner-div e-gantt-child-progressbar" style="height:24px;width:@(taskModel.ProgressWidth + "px");text-align: right;border-radius: 0px;">
+                                </div>
+                            </div>
+                        }
+                    }
+                </TaskbarTemplate>
+            </GanttTemplates>
+            <GanttTooltipSettings ShowTooltip="true" TValue="Course">
+                <TaskbarTemplate>
+                    @{
+                        var course = context as Course;
+                        if (course.Department != "Partical Exams" && course.Department != "Theoretical Exams")
+                        {
+                            <div>
+                                <span>Subject: @context.SubjectName</span>
+                                <br />
+                                <span>Subject Code: @context.SubjectCode</span>
+                                <br />
+                                <span>Portion Completed: @context.PortionCompletion</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div>
+                                <span>Exam: @context.Department</span>
+                            </div>
+                        }
+
+                    }
+                </TaskbarTemplate>
+            </GanttTooltipSettings>
+            <GanttTimelineSettings>
+                <GanttTopTierSettings Unit="TimelineViewMode.Week" Count="2" Format="MMM, yyyy"></GanttTopTierSettings>
+                <GanttBottomTierSettings Unit="TimelineViewMode.Day" Count="2" Format="dd"></GanttBottomTierSettings>
+            </GanttTimelineSettings>
+            <GanttSegmentFields PrimaryKey="Id" ForeignKey="CourseId" StartDate="StartDate" EndDate="EndDate" TValue="Course" TSegments="SegmentModel" DataSource="segmentCollection"></GanttSegmentFields>
+            <GanttHolidays>
+                @{
+                    foreach (var holiday in HolidayCollection)
+                    {
+                        <GanttHoliday From="holiday.Date" To="holiday.Date" Label="@holiday.HolidayName" CssClass="e-custom-holiday"></GanttHoliday>
+                    }
+                }
+            </GanttHolidays>
+            <GanttEventMarkers>
+                <GanttEventMarker Day="oddSemSupplimentExamStart" Label="Suppliment Exam's Start"></GanttEventMarker>
+                <GanttEventMarker Day="oddSemSupplimentExamEnd" Label="Suppliment Exam's End" CssClass="e-custom-event-markers"></GanttEventMarker>
+                <GanttEventMarker Day="evenSemSupplimentExamStart" Label="Suppliment Exam's Start"></GanttEventMarker>
+                <GanttEventMarker Day="evenSemSupplimentExamEnd" Label="Suppliment Exam's End" CssClass="e-custom-event-markers"></GanttEventMarker>
+            </GanttEventMarkers>
+        </SfGantt>
+    </div>
+</div>
+<style>
+    
+
+</style>
