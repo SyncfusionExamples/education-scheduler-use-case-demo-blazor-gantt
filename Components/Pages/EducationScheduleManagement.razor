@@ -34,7 +34,14 @@
                 <div class="col-lg-2 col-xl-2 p-1">
                     <div class="row px-1 pt-3" style="padding-top: 8px;">
                         <div class="p-1 w-100 d-inline-block">
-                            <SfButton Content="Search" CssClass="sf-gantt-filter-btn" OnClick="FilterHandler" class="btn btn-outline-light"></SfButton>
+                            <SfButton Content="Search" CssClass="sf-gantt-filter-btn" IconCss="e-icons e-search" OnClick="FilterHandler" class="btn btn-outline-light"></SfButton>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-xl-2 p-1">
+                    <div class="row px-1 pt-3" style="padding-top: 8px;">
+                        <div class="p-1 w-100 d-inline-block">
+                            <SfButton Content="Clear filter" IconCss="e-icons e-close" OnClick="ClearFilterHandler" CssClass="sf-gantt-clear-filter-btn"></SfButton>
                         </div>
                     </div>
                 </div>
@@ -240,6 +247,19 @@
         margin-top: 3px !important;
     }
 
+    .sf-gantt-clear-filter-btn{
+        width: 100%;
+        background: #f5f5dc !important;
+        color: black !important;
+        margin-left: 5px;
+        margin-top: 3px !important;
+    }
+
+    .sf-gantt-clear-filter-btn:hover {
+        background: #e51818 !important;
+        color: white !important;
+        border-color:white;
+    }
     .e-control.e-gantt {
         box-shadow: 0px 0px 11px 3px lightgray;
         position: relative;

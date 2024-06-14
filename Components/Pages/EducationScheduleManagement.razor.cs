@@ -9,7 +9,6 @@ namespace EducationSchedule.Components.Pages
     public partial class EducationScheduleManagement
     {
         private SfGantt<Course>? gantt;
-        private DataManager dataManager;
         private List<Course>? examCollection { get; set; }
         private List<SegmentModel>? segmentCollection { get; set; }
         private DateTime oddSemSupplimentExamStart = new DateTime(2023, 07, 24);
