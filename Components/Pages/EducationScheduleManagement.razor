@@ -2,108 +2,384 @@
 
 @rendermode InteractiveServer
 
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.SplitButtons
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.QueryBuilder
+@using Syncfusion.Blazor.Calendars
+@using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.Gantt
 
-<div>
-    <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px">
-        <h1>Department</h1>
-        <h3>Computer Science & Engineering</h3>
-    </div>
+<div style="width:100%; height:100%">
+
+    <section class="sf-filter-bar p-0 container-fluid w-100">
+       <div class="filter-bar-btn">
+         <label class="e-filter-label">Academic Period</label>
+        <SfDropDownList Placeholder="Select academic period" ShowClearButton Value="@_academicPeriod" ValueChanged="AcademicPeriodHandler" TValue="string" DataSource="@airlines" TItem="string"></SfDropDownList>
+     </div>
+     <div class="filter-bar-btn">
+         <label e-filter-label>Semester</label>
+        <SfDropDownList Placeholder="Select semseter" ShowClearButton Value="@_academicSemester" ValueChanged="AcademicSemesterHandler" TValue="string" DataSource="@startPlaces" TItem="string"></SfDropDownList>
+     </div>
+     <div class="filter-bar-btn">
+         <label e-filter-label>Professor</label>
+        <SfDropDownList Placeholder="Select professor" ShowClearButton Value="@_professorName" ValueChanged="ProfessorNameHandler" TValue="string" DataSource="@professorNames" TItem="string"></SfDropDownList>
+     </div>
+     <div class="filter-bar-btn">
+         <label e-filter-label>Subject Code</label>
+        <SfTextBox Placeholder="Subject code" ShowClearButton Value="@_subjectCode" ValueChanged="SubjectCodeHandler"></SfTextBox>
+     </div>
+     <div class="filter-bar-btn">
+         <label></label>
+        <SfButton Content="Search" CssClass="sf-gantt-filter-btn" IconCss="e-icons e-search" OnClick="FilterHandler" class="btn btn-outline-light"></SfButton>
+     </div>
+     <div class="filter-bar-btn">
+         <label></label>
+        <SfButton Content="Clear filter" IconCss="e-icons e-close" OnClick="ClearFilterHandler" CssClass="sf-gantt-clear-filter-btn"></SfButton>
+     </div>
+     <div class="filter-bar-btn e-group-by">
+         <label e-filter-label>Group By</label>
+         <div style="display:flex;">
+            <button class="e-icons e-line-small e-group-default-btn" @onclick="@DefaultCollection" title="Academic Year"></button>
+            <button class="e-icons e-rename e-group-btn" @onclick="@ExamCollection" title="Exams"></button>
+            <button class="e-icons e-user e-group-btn" @onclick="@PrepareProfessorCollection" title="Professor"></button>
+         </div>
+
+     </div>
+    </section>
+
     <div>
-        <SfGantt @ref="gantt" TValue="Course" DataSource="@examCollection" Width="100%" Height="450px" EnablePredecessorValidation="false" GridLines="GridLine.Vertical" ScrollToTaskbarOnClick="true">
-            <GanttTaskFields Id="CourseId" Name="SubjectName" ParentID="ParentId" Progress="PortionCompletion" StartDate="StartDate" Duration="Duration" Indicators="Indicators" Dependency="Predecessor"></GanttTaskFields>
-            <GanttColumns>
-                <GanttColumn Field="Department" HeaderText="Academic Period" Width="180"></GanttColumn>
-                <GanttColumn Field="SubjectCode" HeaderText="Subject Code" Width="100"></GanttColumn>
-                <GanttColumn Field="SubjectName" HeaderText="Subject" Width="400"></GanttColumn>
-                <GanttColumn Field="Batch" HeaderText="Batch"></GanttColumn>
-                <GanttColumn Field="Professor" HeaderText="Professor"></GanttColumn>
-                <GanttColumn Field="PortionCompletion" HeaderText="PortionCompletion"></GanttColumn>
-            </GanttColumns>
-            <GanttSplitterSettings ColumnIndex="3"></GanttSplitterSettings>
-            <GanttTemplates TValue="Course">
-                <TaskbarTemplate>
-                    @{
-                        var task = (context as Course);
-                        if (task == null)
-                        {
-                            return;
-                        }
-                        var taskModel = gantt.GetRowTaskModel(task);
-                        List<GanttSegmentData> segments = taskModel.Segments;
-                        var taskbarBackground = task.Department == "Theoretical Exams" ? "#FFA07A" : task.Department == "Partical Exams" ? "" : "#D1E7DD";
-                        var progressbarBackground = task.Department == "Theoretical Exams" ? "#FF7F50 !important" : task.Department == "Partical Exams" ? "" : "#198754 !important";
-                        @if (segments != null && segments.Count() > 1)
-                        {
-                            foreach (var segment in segments)
+        <SfTooltip Target="#professor" Position="Position.TopRight" ShowTipPointer="false">
+            <ContentTemplate>
+                @{
+                    string randomString = ProfessorImageHandler();
+                    <div class="e-professor-tooltip">
+                        <img style="width: 65px;height: 65px;" src="@($"Images/{randomString}.png")" />
+                        <span>@_professorNameTooltip</span>
+                    </div>
+                }
+
+            </ContentTemplate>
+            <ChildContent>
+                <SfGantt @ref="gantt" TValue="Course" DataSource="@examCollection" Width="100%" Height="800px" EnablePredecessorValidation="false" GridLines="GridLine.Vertical" ScrollToTaskbarOnClick="true" Query="@_query">
+                    <GanttTaskFields Id="CourseId" Name="SubjectName" ParentID="ParentId" Progress="Coverage" StartDate="StartDate" Duration="Duration" Indicators="Indicators" Dependency="Predecessor"></GanttTaskFields>
+                    <GanttColumns>
+                        <GanttColumn Field="Department" HeaderText="Academic Period" Width="180"></GanttColumn>
+                        <GanttColumn Field="SubjectCode" HeaderText="Code" Width="100"></GanttColumn>
+                        <GanttColumn Field="SubjectName" HeaderText="Subject" Width="400"></GanttColumn>
+                        <GanttColumn Field="Batch" HeaderText="Batch" Visible="@_isBatchVisible"></GanttColumn>
+                        <GanttColumn Field="Professor" HeaderText="Professor" Visible="@_isProfessorVisible">
+                            <Template>
+                                @{
+                                    var data = (context as Course).Professor;
+                                    <div id="professor" @onmouseover="@(async (MouseEventArgs e) => { ProfessorColumnMouseEnter(data);})">@data</div>
+                                }
+
+                            </Template>
+                        </GanttColumn>
+                        <GanttColumn Field="Coverage" HeaderText="Coverage" Visible="@_isPortionCompletionVisible"></GanttColumn>
+                    </GanttColumns>
+                    <GanttSplitterSettings ColumnIndex="3"></GanttSplitterSettings>
+                    <GanttTooltipSettings ShowTooltip="true" TValue="Course">
+                        <TaskbarTemplate>
+                            @{
+                                var course = context as Course;
+                                if (course.Department != "Partical Exams" && course.Department != "Theoretical Exams")
+                                {
+                                    <div>
+                                        <span>Subject: @context.SubjectName</span>
+                                        <br />
+                                        <span>Subject Code: @context.SubjectCode</span>
+                                        <br />
+                                        <span>Portion Completed: @context.Coverage</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div>
+                                        <span>Exam: @context.Department</span>
+                                    </div>
+                                }
+
+                            }
+                        </TaskbarTemplate>
+                    </GanttTooltipSettings>
+                    <GanttTimelineSettings>
+                        <GanttTopTierSettings Unit="TimelineViewMode.Week" Count="2" Format="MMM, yyyy"></GanttTopTierSettings>
+                        <GanttBottomTierSettings Unit="TimelineViewMode.Day" Count="2" Format="dd"></GanttBottomTierSettings>
+                    </GanttTimelineSettings>
+                    <GanttSegmentFields PrimaryKey="Id" ForeignKey="CourseId" StartDate="StartDate" EndDate="EndDate" TValue="Course" TSegments="SegmentModel" DataSource="segmentCollection"></GanttSegmentFields>
+                    <GanttHolidays>
+                        @{
+                            foreach (var holiday in HolidayCollection)
                             {
-                                <div class="e-gantt-child-taskbar-inner-div e-gantt-child-taskbar e-segmented-taskbar" style=@("height:24px;position: absolute;left:" + segment.Left + "px; width:" + segment.Width + "px; background-color:"+ taskbarBackground +" !important;") tabindex=-1 data-segment-index="@(segment.SegmentIndex)">
-                                    <div class="e-taskbar-left-resizer e-icon" style="margin-top: 5px; left:2px">
-                                    </div>
-                                    <div class="e-gantt-child-progressbar-inner-div e-gantt-child-progressbar" style="height:24px;width:@(segment.ProgressWidth + "px");border-radius: 0px;text-align: right;background-color:@progressbarBackground">
-                                    </div>
-                                    <div class="e-taskbar-right-resizer e-icon" style="margin-top: 5px;left:@((segment.Width) - 15)px">
-                                    </div>
-                                </div>
+                                <GanttHoliday From="holiday.Date" To="holiday.Date" Label="@holiday.HolidayName" CssClass="e-custom-holiday"></GanttHoliday>
                             }
                         }
-                        else
-                        {
-                            <div class="e-gantt-child-taskbar e-gantt-child-taskbar-inner-div" style="height:24px;" tabindex=-1>
-                                <div class="e-gantt-child-progressbar-inner-div e-gantt-child-progressbar" style="height:24px;width:@(taskModel.ProgressWidth + "px");text-align: right;border-radius: 0px;">
-                                </div>
-                            </div>
-                        }
-                    }
-                </TaskbarTemplate>
-            </GanttTemplates>
-            <GanttTooltipSettings ShowTooltip="true" TValue="Course">
-                <TaskbarTemplate>
-                    @{
-                        var course = context as Course;
-                        if (course.Department != "Partical Exams" && course.Department != "Theoretical Exams")
-                        {
-                            <div>
-                                <span>Subject: @context.SubjectName</span>
-                                <br />
-                                <span>Subject Code: @context.SubjectCode</span>
-                                <br />
-                                <span>Portion Completed: @context.PortionCompletion</span>
-                            </div>
-                        }
-                        else
-                        {
-                            <div>
-                                <span>Exam: @context.Department</span>
-                            </div>
-                        }
+                    </GanttHolidays>
+                    <GanttEventMarkers>
+                        <GanttEventMarker Day="oddSemSupplimentExamStart" Label="Suppliment Exam's Start"></GanttEventMarker>
+                        <GanttEventMarker Day="oddSemSupplimentExamEnd" Label="Suppliment Exam's End" CssClass="e-custom-event-markers"></GanttEventMarker>
+                        <GanttEventMarker Day="evenSemSupplimentExamStart" Label="Suppliment Exam's Start"></GanttEventMarker>
+                        <GanttEventMarker Day="evenSemSupplimentExamEnd" Label="Suppliment Exam's End" CssClass="e-custom-event-markers"></GanttEventMarker>
+                    </GanttEventMarkers>
+                    <GanttEvents TValue="Course" QueryChartRowInfo="GanttChartRowInfo"></GanttEvents>
+                </SfGantt>
+            </ChildContent>
 
-                    }
-                </TaskbarTemplate>
-            </GanttTooltipSettings>
-            <GanttTimelineSettings>
-                <GanttTopTierSettings Unit="TimelineViewMode.Week" Count="2" Format="MMM, yyyy"></GanttTopTierSettings>
-                <GanttBottomTierSettings Unit="TimelineViewMode.Day" Count="2" Format="dd"></GanttBottomTierSettings>
-            </GanttTimelineSettings>
-            <GanttSegmentFields PrimaryKey="Id" ForeignKey="CourseId" StartDate="StartDate" EndDate="EndDate" TValue="Course" TSegments="SegmentModel" DataSource="segmentCollection"></GanttSegmentFields>
-            <GanttHolidays>
-                @{
-                    foreach (var holiday in HolidayCollection)
-                    {
-                        <GanttHoliday From="holiday.Date" To="holiday.Date" Label="@holiday.HolidayName" CssClass="e-custom-holiday"></GanttHoliday>
-                    }
-                }
-            </GanttHolidays>
-            <GanttEventMarkers>
-                <GanttEventMarker Day="oddSemSupplimentExamStart" Label="Suppliment Exam's Start"></GanttEventMarker>
-                <GanttEventMarker Day="oddSemSupplimentExamEnd" Label="Suppliment Exam's End" CssClass="e-custom-event-markers"></GanttEventMarker>
-                <GanttEventMarker Day="evenSemSupplimentExamStart" Label="Suppliment Exam's Start"></GanttEventMarker>
-                <GanttEventMarker Day="evenSemSupplimentExamEnd" Label="Suppliment Exam's End" CssClass="e-custom-event-markers"></GanttEventMarker>
-            </GanttEventMarkers>
-        </SfGantt>
+        </SfTooltip>
     </div>
+
 </div>
 <style>
-    
+    .px-4 {
+        padding: 0px !important;
+    }
+
+    .e-group-btn {
+        font-size: 20px;
+        border: 0px;
+        border-radius: 16px;
+        background: #009688;
+        padding: 5px;
+        margin: 0px 5px;
+        color:white;
+    }
+
+    .e-group-btn:focus {
+        background: red !important;
+    }
+
+    .e-group-default-btn{
+        font-size: 20px;
+        border: 0px;
+        border-radius: 16px;
+        background: @buttonColor !important;
+        padding: 5px;
+        margin: 0px 5px;
+        color: white;
+    }
+    .e-tip-content {
+        background: #f2f2f2 !important;
+        color: black !important;
+    }
+
+    .e-professor-tooltip {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        height:100px;
+        font-size:18px;
+        justify-content: space-evenly;
+    }
+
+    .filter-bar-btn {
+        padding: 12px;
+        width: 250px;
+    }
+
+    .e-filter-label {
+        margin-left: 3px;
+    }
+
+    .e-group-by {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .e-group-by-label {
+        padding: 2px 5px 5px 5px;
+        font-size: 14px;
+        color: black;
+        background: #FFDAB9;
+        border-color: #FFDAB9;
+        border-radius: 4px;
+        height: 34px;
+        text-align: center;
+        margin-right: 5px;
+        line-height: 30px;
+    }
+
+    .e-icons {
+        vertical-align: middle;
+        padding-right: 5px;
+    }
+
+    .e-professor {
+        padding: 5px;
+        font-size: 14px;
+        color: black;
+        background: #FFDAB9;
+        border-color: #FFDAB9;
+        border-radius: 4px;
+        height: 34px;
+        text-align: center;
+        margin-right: 5px;
+    }
+
+    .e-exams {
+        padding: 5px;
+        font-size: 14px;
+        color: black;
+        background: #FFDAB9;
+        border-color: #FFDAB9;
+        border-radius: 4px;
+        height: 34px;
+        text-align: center;
+        margin-right: 5px;
+    }
+
+    .e-default-collection {
+        padding: 5px;
+        font-size: 14px;
+        color: black;
+        background: #FFDAB9;
+        border-color: #FFDAB9;
+        border-radius: 4px;
+        height: 34px;
+        text-align: center;
+        margin-right: 5px;
+        content: '\e70b'
+    }
+
+    .customize-parent .e-gantt-parent-taskbar {
+        outline: none !important;
+        background-color: #f8c0ce !important;
+    }
+
+    .customize-child .e-gantt-child-taskbar {
+        outline: none !important;
+        background-color: #71cadf !important;
+    }
+
+    .customize-parent .e-gantt-parent-progressbar {
+        background-color: #d14768 !important;
+    }
+
+    .customize-child .e-gantt-child-progressbar {
+        background-color: #229baa !important;
+    }
+
+    .partical-exam .e-gantt-child-taskbar {
+        outline: none !important;
+        background-color: #b4d6fa !important;
+    }
+
+    .partical-exam .e-gantt-child-progressbar {
+        background-color: #0f6cbd !important;
+    }
+
+    .theoretical-exam .e-gantt-child-taskbar {
+        outline: none !important;
+        background-color: #FFA07A !important;
+    }
+
+    .theoretical-exam .e-gantt-child-progressbar {
+        background-color: #FF7F50 !important;
+    }
+
+    .e-gantt .e-gantt-chart .e-custom-holiday {
+        background-color: #E7F1FF;
+        z-index: 1;
+    }
+
+    .e-segmented-taskbar.e-gantt-clone-taskbar {
+        top: 0px !important;
+    }
+
+    .e-segmented-taskbar {
+        outline: 0px !important;
+    }
+
+    .e-gantt .e-gantt-chart .e-custom-event-markers .e-span-label {
+        top: 90px;
+    }
+
+    .sf-filter-bar {
+        background: #f5f5dc;
+        color: #000080;
+        position: relative;
+        top: 10px;
+        display: flex;
+        height: 80px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        box-shadow: 0px -6px 11px 3px lightgray;
+    }
+
+    .sf-gantt-filter-btn {
+        width: 100%;
+        background: #009688 !important;
+        color: white !important;
+        font-weight: bold !important;
+        margin-bottom: 5px;
+        margin-top: 3px !important;
+    }
+
+    .sf-gantt-clear-filter-btn {
+        width: 100%;
+        background: #f5f5dc !important;
+        color: black !important;
+        margin-left: 5px;
+        margin-top: 3px !important;
+    }
+
+
+    .e-control.e-gantt {
+        box-shadow: 0px 0px 11px 3px lightgray;
+        position: relative;
+        top: 10px;
+    }
+
+    .e-timeline-top-header-cell, .e-gantt .e-gantt-tree-grid-pane .e-headercell {
+        background: #37e6b4 !important;
+        border: 1px solid #fff !important;
+    }
+
+    .e-grid .e-headercell {
+        padding-left: 18px !important;
+    }
+
+    .e-grid .e-treecell {
+        font-family: DMSans-regular, DMSans-regular, DMSans-regular, sans-serif !important;
+    }
+
+    .sf-gantt-clear-btn {
+        width: 100%;
+        background: cornflowerblue;
+        font-weight: bold;
+    }
+
+        .sf-gantt-clear-btn:hover {
+            background: cornflowerblue;
+        }
+
+    .e-search-icon::before {
+        content: '\e754';
+        font-family: e-icons;
+    }
+
+    .e-gantt .e-gantt-tree-grid-pane .e-grid td.e-active {
+        background: #D6EAF8 !important;
+        opacity: .9;
+    }
+
+    .e-gantt .e-gantt-chart .e-active {
+        background: #D6EAF8 !important;
+        color: #212529;
+        opacity: .9;
+    }
+
+    .e-gridcontent tr:nth-child(even) td {
+        background-color: #f2f2f2 !important;
+    }
+
+    .e-chart-root-container tr:nth-child(even) {
+        background-color: #f2f2f2 !important;
+    }
 
 </style>
